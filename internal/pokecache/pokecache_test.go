@@ -37,8 +37,8 @@ func TestAddGet(t *testing.T) {
 }
 
 func TestReapLoop(t *testing.T) {
-	const baseTime = 5 * time.Second
-	const waitTime = baseTime + 1*time.Second
+	const baseTime = 5 * time.Millisecond
+	const waitTime = baseTime + 1*time.Millisecond
 
 	cache := NewCache(baseTime)
 	cache.Add("test", []byte("test"))
