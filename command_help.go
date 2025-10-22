@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func commandHelp(config *Config) error {
+func commandHelp(config *Config, arg string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Print("Usage:\n\n")
 

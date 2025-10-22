@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -17,12 +18,13 @@ type Config struct {
 	Next      string
 	Previous  string
 	ApiClient pokeapi.PokeApiClient
+	Pokedex   map[string]pokeapi.PokemonInformation
 }
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*Config) error
+	callback    func(*Config, string) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -36,6 +38,26 @@ func getCommands() map[string]cliCommand {
 			name:        "mapb",
 			description: "Iterate over locations",
 			callback:    commandMapb,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Explore selected area",
+			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Catch a pokemon",
+			callback:    commandCatch,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "Inspect a pokemon",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "List all catched pokemon names",
+			callback:    commandPokedex,
 		},
 		"help": {
 			name:        "help",
@@ -56,6 +78,7 @@ func startRepl() {
 		Next:      "",
 		Previous:  "",
 		ApiClient: pokeapi.NewPokeApiClient(),
+		Pokedex:   make(map[string]pokeapi.PokemonInformation),
 	}
 
 	for {
@@ -71,6 +94,11 @@ func startRepl() {
 
 		commandName := input[0]
 
+		arg := ""
+		if len(input) > 1 {
+			arg = input[1]
+		}
+
 		commands := getCommands()
 
 		command, ok := commands[commandName]
@@ -79,9 +107,9 @@ func startRepl() {
 			continue
 		}
 
-		err := command.callback(&config)
+		err := command.callback(&config, arg)
 		if err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		}
 	}
 }

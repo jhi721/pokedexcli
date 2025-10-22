@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func commandMap(config *Config) error {
+func commandMap(config *Config, arg string) error {
 	locationsUrl := "https://pokeapi.co/api/v2/location-area"
 	if config.Next != "" {
 		locationsUrl = config.Next
@@ -25,7 +25,7 @@ func commandMap(config *Config) error {
 	return nil
 }
 
-func commandMapb(config *Config) error {
+func commandMapb(config *Config, arg string) error {
 	locationsUrl := "https://pokeapi.co/api/v2/location-area"
 	if config.Previous != "" {
 		locationsUrl = config.Previous
