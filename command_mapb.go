@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"internal/pokeapi"
+
+	"github.com/jhi721/pokedexcli/internal/pokeapi"
 )
 
 func commandMapb(config *Config) error {
