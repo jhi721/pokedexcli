@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/jhi721/pokedexcli/internal/pokeapi"
 )
 
 func cleanInput(text string) []string {
@@ -12,8 +14,9 @@ func cleanInput(text string) []string {
 }
 
 type Config struct {
-	Next     string
-	Previous string
+	Next      string
+	Previous  string
+	ApiClient pokeapi.PokeApiClient
 }
 
 type cliCommand struct {
@@ -50,8 +53,9 @@ func getCommands() map[string]cliCommand {
 func startRepl() {
 	scanner := bufio.NewScanner(os.Stdin)
 	config := Config{
-		Next:     "",
-		Previous: "",
+		Next:      "",
+		Previous:  "",
+		ApiClient: pokeapi.NewPokeApiClient(),
 	}
 
 	for {

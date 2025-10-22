@@ -2,8 +2,12 @@ package pokeapi
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/jhi721/pokedexcli/internal/pokecache"
 )
 
 type Locations struct {
@@ -16,7 +20,33 @@ type Locations struct {
 	} `json:"results"`
 }
 
-func GetLocations(url string) (Locations, error) {
+type PokeApiClient struct {
+	cache pokecache.Cache
+}
+
+type api interface {
+	Get(url string) (Locations, error)
+}
+
+func NewPokeApiClient() PokeApiClient {
+	return PokeApiClient{
+		cache: pokecache.NewCache(5 * time.Second),
+	}
+}
+
+func (p PokeApiClient) Get(url string) (Locations, error) {
+	val, exists := p.cache.Get(url)
+
+	if exists {
+		var locations Locations
+
+		if err := json.Unmarshal(val, &locations); err != nil {
+			log.Fatal(err)
+		}
+
+		return locations, nil
+	}
+
 	res, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
@@ -28,10 +58,16 @@ func GetLocations(url string) (Locations, error) {
 	}
 
 	var locations Locations
-	decoder := json.NewDecoder(res.Body)
-	if err := decoder.Decode(&locations); err != nil {
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return Locations{}, nil
+	}
+
+	if err := json.Unmarshal(data, &locations); err != nil {
 		log.Fatal(err)
 	}
+
+	p.cache.Add(url, data)
 
 	return locations, nil
 }
