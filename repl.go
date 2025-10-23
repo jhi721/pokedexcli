@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -109,7 +108,7 @@ func startRepl() {
 
 		err := command.callback(&config, arg)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 	}
 }

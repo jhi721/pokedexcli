@@ -52,124 +52,107 @@ type PokeApiClient struct {
 
 func NewPokeApiClient() PokeApiClient {
 	return PokeApiClient{
-		cache: pokecache.NewCache(5 * time.Second),
+		cache: pokecache.NewCache(5 * time.Minute),
 	}
 }
 
-func (p PokeApiClient) GetPokemonByName(name string) (PokemonInformation, error) {
-	val, exists := p.cache.Get(name)
+func checkCache[T Locations | LocationArea | PokemonInformation](cache pokecache.Cache, key string) (T, bool, error) {
+	var cachedVal T
 
-	if exists {
-		var pokemonInformation PokemonInformation
+	val, exists := cache.Get(key)
 
-		if err := json.Unmarshal(val, &pokemonInformation); err != nil {
-			return PokemonInformation{}, fmt.Errorf("error unmarshaling cached entry %v", err)
-		}
-
-		return pokemonInformation, nil
+	if !exists {
+		return cachedVal, exists, nil
 	}
 
-	res, err := http.Get("https://pokeapi.co/api/v2/pokemon/" + name)
-	if err != nil {
-		return PokemonInformation{}, fmt.Errorf("error getting %s pokemon entry", name)
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode == 404 {
-		return PokemonInformation{}, fmt.Errorf("cannot find pokemon with the name %s", name)
-	} else if res.StatusCode > 299 {
-		return PokemonInformation{}, fmt.Errorf("response failed with status code: %d and\nbody: %s", res.StatusCode, res.Body)
+	if err := json.Unmarshal(val, &cachedVal); err != nil {
+		return cachedVal, exists, fmt.Errorf("error unmarshaling cached entry %w", err)
 	}
 
-	var pokemonInformation PokemonInformation
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return pokemonInformation, fmt.Errorf("error reading from the body %w", err)
-	}
-
-	if err := json.Unmarshal(data, &pokemonInformation); err != nil {
-		return PokemonInformation{}, fmt.Errorf("error unmarshaling entry from the api %w", err)
-	}
-
-	p.cache.Add(name, data)
-
-	return pokemonInformation, nil
+	return cachedVal, exists, nil
 }
 
-func (p PokeApiClient) GetByName(name string) (LocationArea, error) {
-	val, exists := p.cache.Get(name)
-
-	if exists {
-		var locationArea LocationArea
-
-		if err := json.Unmarshal(val, &locationArea); err != nil {
-			return LocationArea{}, fmt.Errorf("error unmarshaling cached entry %v", err)
-		}
-
-		return locationArea, nil
-	}
-
-	res, err := http.Get("https://pokeapi.co/api/v2/location-area/" + name)
-	if err != nil {
-		return LocationArea{}, fmt.Errorf("error getting %s location area entry", name)
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode == 404 {
-		return LocationArea{}, fmt.Errorf("cannot find area with the name %s", name)
-	} else if res.StatusCode > 299 {
-		return LocationArea{}, fmt.Errorf("response failed with status code: %d and\nbody: %s", res.StatusCode, res.Body)
-	}
-
-	var locationArea LocationArea
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return LocationArea{}, fmt.Errorf("error reading from the body %w", err)
-	}
-
-	if err := json.Unmarshal(data, &locationArea); err != nil {
-		return LocationArea{}, fmt.Errorf("error unmarshaling entry from the api %v", err)
-	}
-
-	p.cache.Add(name, data)
-
-	return locationArea, nil
-}
-
-func (p PokeApiClient) Get(url string) (Locations, error) {
-	val, exists := p.cache.Get(url)
-
-	if exists {
-		var locations Locations
-
-		if err := json.Unmarshal(val, &locations); err != nil {
-			return Locations{}, fmt.Errorf("error unmarshaling cached entry %v", err)
-		}
-
-		return locations, nil
-	}
+func getRequest[T Locations | LocationArea | PokemonInformation](cache pokecache.Cache, url string) (T, error) {
+	var payload T
 
 	res, err := http.Get(url)
 	if err != nil {
-		return Locations{}, fmt.Errorf("error getting location area entries")
+		return payload, fmt.Errorf("error GET %s\n%w", url, err)
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode > 299 {
-		return Locations{}, fmt.Errorf("response failed with status code: %d and\nbody: %s", res.StatusCode, res.Body)
+	if res.StatusCode == 404 {
+		return payload, fmt.Errorf("GET %s not found", url)
+	} else if res.StatusCode > 299 {
+		return payload, fmt.Errorf("response failed with status code: %d and\nbody: %s", res.StatusCode, res.Body)
 	}
 
-	var locations Locations
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		return Locations{}, fmt.Errorf("error reading from the body %w", err)
+		return payload, fmt.Errorf("error reading from the body %w", err)
 	}
 
-	if err := json.Unmarshal(data, &locations); err != nil {
-		return Locations{}, fmt.Errorf("error unmarshaling entry from the api %v", err)
+	if err := json.Unmarshal(data, &payload); err != nil {
+		return payload, fmt.Errorf("error unmarshaling entry from the api %w", err)
 	}
 
-	p.cache.Add(url, data)
+	cache.Add(url, data)
 
-	return locations, nil
+	return payload, nil
+}
+
+func (p PokeApiClient) GetPokemonByName(name string) (PokemonInformation, error) {
+	baseUrl := "https://pokeapi.co/api/v2/pokemon/" + name
+
+	pokemonInformationFromCache, exists, err := checkCache[PokemonInformation](p.cache, baseUrl)
+	if err != nil {
+		return PokemonInformation{}, err
+	}
+	if exists {
+		return pokemonInformationFromCache, nil
+	}
+
+	pokemonInformationFromApi, err := getRequest[PokemonInformation](p.cache, baseUrl)
+	if err != nil {
+		return PokemonInformation{}, err
+	}
+
+	return pokemonInformationFromApi, nil
+}
+
+func (p PokeApiClient) GetLocationAreaByName(name string) (LocationArea, error) {
+	baseUrl := "https://pokeapi.co/api/v2/location-area/" + name
+
+	locationAreaFromCache, exists, err := checkCache[LocationArea](p.cache, name)
+	if err != nil {
+		return LocationArea{}, err
+	}
+	if exists {
+		return locationAreaFromCache, nil
+	}
+
+	locationAreaFromApi, err := getRequest[LocationArea](p.cache, baseUrl)
+	if err != nil {
+		return LocationArea{}, err
+	}
+
+	return locationAreaFromApi, nil
+
+}
+
+func (p PokeApiClient) GetLocations(url string) (Locations, error) {
+	locationsFromCache, exists, err := checkCache[Locations](p.cache, url)
+	if err != nil {
+		return Locations{}, err
+	}
+	if exists {
+		return locationsFromCache, nil
+	}
+
+	locationsFromApi, err := getRequest[Locations](p.cache, url)
+	if err != nil {
+		return Locations{}, err
+	}
+
+	return locationsFromApi, nil
 }

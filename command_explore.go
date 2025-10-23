@@ -10,7 +10,7 @@ func commandExplore(config *Config, city string) error {
 
 	fmt.Printf("Exploring %s\n", city)
 
-	locationArea, err := config.ApiClient.GetByName(city)
+	locationArea, err := config.ApiClient.GetLocationAreaByName(city)
 	if err != nil {
 		return err
 	}

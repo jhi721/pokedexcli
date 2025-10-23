@@ -1,16 +1,11 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
-func commandMap(config *Config, arg string) error {
-	locationsUrl := "https://pokeapi.co/api/v2/location-area"
-	if config.Next != "" {
-		locationsUrl = config.Next
-	}
+const locationsUrl = "https://pokeapi.co/api/v2/location-area"
 
-	locations, err := config.ApiClient.Get(locationsUrl)
+func mapHandler(config *Config, url string) error {
+	locations, err := config.ApiClient.GetLocations(url)
 	if err != nil {
 		return err
 	}
@@ -25,23 +20,28 @@ func commandMap(config *Config, arg string) error {
 	return nil
 }
 
-func commandMapb(config *Config, arg string) error {
-	locationsUrl := "https://pokeapi.co/api/v2/location-area"
-	if config.Previous != "" {
-		locationsUrl = config.Previous
+func commandMap(config *Config, arg string) error {
+	url := locationsUrl
+	if config.Next != "" {
+		url = config.Next
 	}
 
-	locations, err := config.ApiClient.Get(locationsUrl)
-	if err != nil {
+	if err := mapHandler(config, url); err != nil {
 		return err
 	}
 
-	for _, location := range locations.Results {
-		fmt.Println(location.Name)
+	return nil
+}
+
+func commandMapb(config *Config, arg string) error {
+	url := locationsUrl
+	if config.Previous != "" {
+		url = config.Previous
 	}
 
-	config.Next = locations.Next
-	config.Previous = locations.Previous
+	if err := mapHandler(config, url); err != nil {
+		return err
+	}
 
 	return nil
 }
