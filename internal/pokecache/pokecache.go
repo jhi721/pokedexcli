@@ -15,12 +15,6 @@ type Cache struct {
 	mu   *sync.Mutex
 }
 
-type cacheInterface interface {
-	Add(key string, val []byte)
-	Get(key string) ([]byte, bool)
-	reapLoop()
-}
-
 func (c Cache) Add(key string, val []byte) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

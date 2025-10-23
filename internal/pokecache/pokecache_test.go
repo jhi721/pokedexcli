@@ -19,7 +19,7 @@ func TestAddGet(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		t.Run(fmt.Sprintf("Test vase %v", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Test case %v", i), func(t *testing.T) {
 			cache := NewCache(interval)
 			cache.Add(c.key, c.val)
 			val, exists := cache.Get(c.key)
