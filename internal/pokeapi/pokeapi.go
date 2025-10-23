@@ -47,7 +47,7 @@ type PokemonInformation struct {
 }
 
 type PokeApiClient struct {
-	cache pokecache.Cache
+	cache *pokecache.Cache
 }
 
 func NewPokeApiClient() PokeApiClient {
@@ -56,7 +56,7 @@ func NewPokeApiClient() PokeApiClient {
 	}
 }
 
-func checkCache[T Locations | LocationArea | PokemonInformation](cache pokecache.Cache, key string) (T, bool, error) {
+func checkCache[T Locations | LocationArea | PokemonInformation](cache *pokecache.Cache, key string) (T, bool, error) {
 	var cachedVal T
 
 	val, exists := cache.Get(key)
@@ -72,7 +72,7 @@ func checkCache[T Locations | LocationArea | PokemonInformation](cache pokecache
 	return cachedVal, exists, nil
 }
 
-func getRequest[T Locations | LocationArea | PokemonInformation](cache pokecache.Cache, url string) (T, error) {
+func getRequest[T Locations | LocationArea | PokemonInformation](cache *pokecache.Cache, url string) (T, error) {
 	var payload T
 
 	res, err := http.Get(url)
