@@ -123,7 +123,7 @@ func (p PokeApiClient) GetPokemonByName(name string) (PokemonInformation, error)
 func (p PokeApiClient) GetLocationAreaByName(name string) (LocationArea, error) {
 	baseUrl := "https://pokeapi.co/api/v2/location-area/" + name
 
-	locationAreaFromCache, exists, err := checkCache[LocationArea](p.cache, name)
+	locationAreaFromCache, exists, err := checkCache[LocationArea](p.cache, baseUrl)
 	if err != nil {
 		return LocationArea{}, err
 	}
